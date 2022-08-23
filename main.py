@@ -37,6 +37,9 @@ class Candidates:
                 return self.names[i]
         return NONE_VOTE
 
+    def indexOf(self, name):
+        return self.names.index(name)
+
 
 class Voter:
     @staticmethod
@@ -50,16 +53,6 @@ class Voter:
                 break
             ranking.append(name)
         return ranking
-
-
-def generate_votes(candidates, num_voters):
-    votes = []
-    for i in range(num_voters):
-        row = [i + 1]  # voter number
-        ranking = Voter.vote(candidates)
-        row.extend(ranking)  # voter number, rankings
-        votes.append(row)
-    return votes
 
 
 def count_votes(num_candidates, votes):
@@ -77,11 +70,64 @@ def tabulate_rcv(num_candidates, votes):
     pass
 
 
-def tabulate_bucklin(num_candidates, votes):
-    pass
+def tabulate_bucklin(candidates, votes):
+    rounds = []
+    for i in range(candidates.count()):
+        vote_sums = [0] * candidates.count()
+        for v in votes:
+            if i+1 < len(v):
+                vi = candidates.indexOf(v[i+1])
+                vote_sums[vi] += 1
+        rounds.append(vote_sums)
+
+    return rounds
 
 
-def report_votes(ir, candidates, nv, th, votes, dest):
+def generate_votes(candidates, num_voters):
+    votes = []
+    for i in range(num_voters):
+        row = [i + 1]  # voter number
+        ranking = Voter.vote(candidates)
+        row.extend(ranking)  # voter number, rankings
+        votes.append(row)
+    return votes
+
+
+def report_bucklin(writer, candidates, bucklin):
+    writer.writerow(['Bucklin'])
+    writer.writerow(['Additional_Votes_Per_Round'])
+
+    i = 0
+    for b in bucklin:
+        if i == 0:
+            headers = ['Round']
+            headers.extend(candidates.names)
+            writer.writerow(headers)
+        i += 1
+        row = [i]
+        row.extend(b)
+        writer.writerow(row)
+
+    writer.writerow(['Total_Votes_Per_Round'])
+
+    i = 0
+    prev = None
+    for b in bucklin:
+        if i == 0:
+            headers = ['Round']
+            headers.extend(candidates.names)
+            writer.writerow(headers)
+        i += 1
+        row = [i]
+        row.extend(b)
+        if prev is not None:
+            for j in range(1, len(prev)):
+                row[j] += prev[j]
+        writer.writerow(row)
+        prev = row
+
+
+def report_votes(ir, candidates, nv, th, votes, dest, bucklin):
     nc = candidates.count()
     tv = math.ceil(th * nv / 100.0)
 
@@ -89,7 +135,7 @@ def report_votes(ir, candidates, nv, th, votes, dest):
     for i in range(nc):
         h.append(f'R{i+1}')
 
-    with open(f'{dest}/result-{ir}.csv', "w", newline='') as f:
+    with open(f'{dest}/votes-{ir}.csv', "w", newline='') as f:
         writer = csv.writer(f)
         writer.writerow(['Candidates', nc])
         writer.writerow(['Voters', nv])
@@ -104,6 +150,9 @@ def report_votes(ir, candidates, nv, th, votes, dest):
         writer.writerow(x)
 
         writer.writerow([])
+        report_bucklin(writer, candidates, bucklin)
+
+        writer.writerow([])
         writer.writerow(h)
         writer.writerows(votes)
 
@@ -115,12 +164,14 @@ def main(n_candidates, n_voters, win_pct, n_rounds, dest):
     for r in range(n_rounds):
         candidates = Candidates(n_candidates)
         results = generate_votes(candidates, n_voters)
-        report_votes(r+1, candidates, n_voters, win_pct, results, dest)
+        bucklin = tabulate_bucklin(candidates, results)
+
+        report_votes(r+1, candidates, n_voters, win_pct, results, dest, bucklin)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', type=int, default=3, required=False, help='Number of Candidates or Resolutions')
+    parser.add_argument('-c', type=int, default=2, required=False, help='Number of Candidates or Resolutions')
     parser.add_argument('-v', type=int, default=100, required=False, help='Number of Voters')
     parser.add_argument('-t', type=int, default=75, required=False, help='Win threshold (percent)')
     parser.add_argument('-r', type=int, default=11, required=False, help='Simulation rounds')
