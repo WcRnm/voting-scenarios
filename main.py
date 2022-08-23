@@ -4,7 +4,6 @@ import math
 import os
 import random
 
-DEST = 'results'
 CANDIDATES = ['Alice', 'Bob', 'Carol', 'David', 'Erin', 'Fred', 'Grace', 'Henry']
 
 
@@ -71,7 +70,7 @@ def tabulate_bucklin(num_candidates, votes):
     pass
 
 
-def report_votes(ir, candidates, nv, th, votes):
+def report_votes(ir, candidates, nv, th, votes, dest):
     nc = candidates.count()
     tv = math.ceil(th * nv / 100.0)
 
@@ -79,7 +78,7 @@ def report_votes(ir, candidates, nv, th, votes):
     for i in range(nc):
         h.append(f'R{i+1}')
 
-    with open(f'{DEST}/result-{ir}.csv', "w", newline='') as f:
+    with open(f'{dest}/result-{ir}.csv', "w", newline='') as f:
         writer = csv.writer(f)
         writer.writerow(['Candidates', nc])
         writer.writerow(['Voters', nv])
@@ -98,14 +97,14 @@ def report_votes(ir, candidates, nv, th, votes):
         writer.writerows(votes)
 
 
-def main(n_candidates, n_voters, win_pct, n_rounds):
-    if not os.path.exists(DEST):
-        os.makedirs(DEST)
+def main(n_candidates, n_voters, win_pct, n_rounds, dest):
+    if not os.path.exists(dest):
+        os.makedirs(dest)
 
     for r in range(n_rounds):
         candidates = Candidates(n_candidates)
         results = generate_votes(candidates, n_voters)
-        report_votes(r+1, candidates, n_voters, win_pct, results)
+        report_votes(r+1, candidates, n_voters, win_pct, results, dest)
 
 
 if __name__ == '__main__':
@@ -114,6 +113,7 @@ if __name__ == '__main__':
     parser.add_argument('-v', type=int, default=100, required=False, help='Number of Voters')
     parser.add_argument('-t', type=int, default=75, required=False, help='Win threshold (percent)')
     parser.add_argument('-r', type=int, default=11, required=False, help='Simulation rounds')
+    parser.add_argument('-d', type=str, default='results', required=False, help='Result folder')
     args = parser.parse_args()
 
-    main(args.c, args.v, args.t, args.r)
+    main(args.c, args.v, args.t, args.r, args.d)
