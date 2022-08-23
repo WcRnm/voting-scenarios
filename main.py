@@ -70,17 +70,53 @@ def tabulate_rcv(num_candidates, votes):
     pass
 
 
-def tabulate_bucklin(candidates, votes):
-    rounds = []
-    for i in range(candidates.count()):
-        vote_sums = [0] * candidates.count()
-        for v in votes:
-            if i+1 < len(v):
-                vi = candidates.indexOf(v[i+1])
-                vote_sums[vi] += 1
-        rounds.append(vote_sums)
+class Bucklin:
+    def __init__(self, candidates):
+        self.candidates = candidates
+        self.rounds = None
 
-    return rounds
+    def tabulate(self, votes):
+        self.rounds = []
+        for i in range(self.candidates.count()-1):
+            vote_sums = [0] * self.candidates.count()
+            for v in votes:
+                if i + 1 < len(v):
+                    vi = self.candidates.indexOf(v[i + 1])
+                    vote_sums[vi] += 1
+            self.rounds.append(vote_sums)
+
+    def report(self, writer):
+        writer.writerow(['Bucklin'])
+        writer.writerow(['Additional_Votes_Per_Round'])
+
+        i = 0
+        for b in self.rounds:
+            if i == 0:
+                headers = ['Round']
+                headers.extend(self.candidates.names)
+                writer.writerow(headers)
+            i += 1
+            row = [i]
+            row.extend(b)
+            writer.writerow(row)
+
+        writer.writerow(['Total_Votes_Per_Round'])
+
+        i = 0
+        prev = None
+        for b in self.rounds:
+            if i == 0:
+                headers = ['Round']
+                headers.extend(self.candidates.names)
+                writer.writerow(headers)
+            i += 1
+            row = [i]
+            row.extend(b)
+            if prev is not None:
+                for j in range(1, len(prev)):
+                    row[j] += prev[j]
+            writer.writerow(row)
+            prev = row
 
 
 def generate_votes(candidates, num_voters):
@@ -91,40 +127,6 @@ def generate_votes(candidates, num_voters):
         row.extend(ranking)  # voter number, rankings
         votes.append(row)
     return votes
-
-
-def report_bucklin(writer, candidates, bucklin):
-    writer.writerow(['Bucklin'])
-    writer.writerow(['Additional_Votes_Per_Round'])
-
-    i = 0
-    for b in bucklin:
-        if i == 0:
-            headers = ['Round']
-            headers.extend(candidates.names)
-            writer.writerow(headers)
-        i += 1
-        row = [i]
-        row.extend(b)
-        writer.writerow(row)
-
-    writer.writerow(['Total_Votes_Per_Round'])
-
-    i = 0
-    prev = None
-    for b in bucklin:
-        if i == 0:
-            headers = ['Round']
-            headers.extend(candidates.names)
-            writer.writerow(headers)
-        i += 1
-        row = [i]
-        row.extend(b)
-        if prev is not None:
-            for j in range(1, len(prev)):
-                row[j] += prev[j]
-        writer.writerow(row)
-        prev = row
 
 
 def report_votes(ir, candidates, nv, th, votes, dest, bucklin):
@@ -150,7 +152,7 @@ def report_votes(ir, candidates, nv, th, votes, dest, bucklin):
         writer.writerow(x)
 
         writer.writerow([])
-        report_bucklin(writer, candidates, bucklin)
+        bucklin.report(writer)
 
         writer.writerow([])
         writer.writerow(h)
@@ -164,7 +166,9 @@ def main(n_candidates, n_voters, win_pct, n_rounds, dest):
     for r in range(n_rounds):
         candidates = Candidates(n_candidates)
         results = generate_votes(candidates, n_voters)
-        bucklin = tabulate_bucklin(candidates, results)
+
+        bucklin = Bucklin(candidates)
+        bucklin.tabulate(results)
 
         report_votes(r+1, candidates, n_voters, win_pct, results, dest, bucklin)
 
