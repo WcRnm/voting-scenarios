@@ -4,14 +4,14 @@ import math
 import os
 import random
 
-CANDIDATES = ['Alice', 'Bob', 'Carol', 'David', 'Erin', 'Fred', 'Grace', 'Henry']
+CANDIDATE_NAMES = ['Alice', 'Bob', 'Carol', 'David', 'Erin', 'Fred', 'Grace', 'Henry']
 
 
 class Candidates:
     def __init__(self, count):
-        if count > len(CANDIDATES) or count < 1:
+        if count > len(CANDIDATE_NAMES) or count < 1:
             raise ValueError('Too many/few Candidates')
-        self.names = CANDIDATES[:count]
+        self.names = CANDIDATE_NAMES[:count]
         self.favorability = []
         self.test = []
         fav_sum = 0
@@ -42,7 +42,6 @@ def generate_votes(candidates, num_voters):
         row = [i+1]  # voter number
         for c in range(n_candidates+1):
             name = candidates.random()
-            r = random.randrange(0, n_candidates+1)
             if name in row:
                 # duplicate
                 break
