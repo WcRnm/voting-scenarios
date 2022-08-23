@@ -5,6 +5,7 @@ import os
 import random
 
 CANDIDATE_NAMES = ['Alice', 'Bob', 'Carol', 'David', 'Erin', 'Fred', 'Grace', 'Henry']
+NONE_VOTE = 'None'
 
 
 class Candidates:
@@ -12,15 +13,16 @@ class Candidates:
         if count > len(CANDIDATE_NAMES) or count < 1:
             raise ValueError('Too many/few Candidates')
         self.names = CANDIDATE_NAMES[:count]
+        self.names.append(NONE_VOTE)
         self.favorability = []
         self.test = []
         fav_sum = 0
-        for i in range(count):
+        for i in range(count+1):
             fav = random.randrange(0, 100)
             fav_sum += fav
             self.favorability.append(fav)
         test_prev = 0
-        for i in range(count):
+        for i in range(count+1):
             test = test_prev + self.favorability[i]/fav_sum
             self.test.append(test)
             test_prev = test
@@ -33,19 +35,29 @@ class Candidates:
         for i in range(self.count()):
             if r <= self.test[i]:
                 return self.names[i]
+        return NONE_VOTE
+
+
+class Voter:
+    @staticmethod
+    def vote(candidates):
+        ranking = []
+        for c in range(candidates.count()):
+            name = candidates.random()
+            if name in ranking:
+                break
+            if name is NONE_VOTE:
+                break
+            ranking.append(name)
+        return ranking
 
 
 def generate_votes(candidates, num_voters):
     votes = []
-    n_candidates = candidates.count()
     for i in range(num_voters):
-        row = [i+1]  # voter number
-        for c in range(n_candidates+1):
-            name = candidates.random()
-            if name in row:
-                # duplicate
-                break
-            row.append(name)
+        row = [i + 1]  # voter number
+        ranking = Voter.vote(candidates)
+        row.extend(ranking)  # voter number, rankings
         votes.append(row)
     return votes
 
