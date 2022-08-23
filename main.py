@@ -48,7 +48,7 @@ class Voter:
         for c in range(candidates.count()):
             name = candidates.random()
             if name in ranking:
-                break
+                continue
             if name is NONE_VOTE:
                 break
             ranking.append(name)
@@ -174,7 +174,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', type=int, default=2, required=False, help='Number of Candidates or Resolutions')
     parser.add_argument('-v', type=int, default=100, required=False, help='Number of Voters')
     parser.add_argument('-t', type=int, default=75, required=False, help='Win threshold (percent)')
-    parser.add_argument('-r', type=int, default=11, required=False, help='Simulation rounds')
+    parser.add_argument('-r', type=int, default=10, required=False, help='Simulation rounds')
     parser.add_argument('-d', type=str, default='results', required=False, help='Result folder')
     args = parser.parse_args()
 
