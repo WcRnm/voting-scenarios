@@ -8,20 +8,46 @@ DEST = 'results'
 CANDIDATES = ['Alice', 'Bob', 'Carol', 'David', 'Erin', 'Fred', 'Grace', 'Henry']
 
 
-def generate_votes(num_candidates, num_voters):
+class Candidates:
+    def __init__(self, count):
+        if count > len(CANDIDATES) or count < 1:
+            raise ValueError('Too many/few Candidates')
+        self.names = CANDIDATES[:count]
+        self.favorability = []
+        self.test = []
+        fav_sum = 0
+        for i in range(count):
+            fav = random.randrange(0, 100)
+            fav_sum += fav
+            self.favorability.append(fav)
+        test_prev = 0
+        for i in range(count):
+            test = test_prev + self.favorability[i]/fav_sum
+            self.test.append(test)
+            test_prev = test
+
+    def count(self):
+        return len(self.names)
+
+    def random(self):
+        r = random.random()
+        for i in range(self.count()):
+            if r <= self.test[i]:
+                return self.names[i]
+
+
+def generate_votes(candidates, num_voters):
     votes = []
+    n_candidates = candidates.count()
     for i in range(num_voters):
         row = [i+1]  # voter number
-        for c in range(num_candidates+1):
-            r = random.randrange(0, num_candidates+1)
-            if r == num_candidates:
-                # none
-                break
-            candidate = CANDIDATES[r]
-            if candidate in row:
+        for c in range(n_candidates+1):
+            name = candidates.random()
+            r = random.randrange(0, n_candidates+1)
+            if name in row:
                 # duplicate
                 break
-            row.append(candidate)
+            row.append(name)
         votes.append(row)
     return votes
 
@@ -45,7 +71,8 @@ def tabulate_bucklin(num_candidates, votes):
     pass
 
 
-def report_votes(ir, nc, nv, th, votes):
+def report_votes(ir, candidates, nv, th, votes):
+    nc = candidates.count()
     tv = math.ceil(th * nv / 100.0)
 
     h = ['Voter']
@@ -59,6 +86,14 @@ def report_votes(ir, nc, nv, th, votes):
         writer.writerow(['Threshold', th, tv])
 
         writer.writerow([])
+        x = ['Candidate']
+        x.extend(candidates.names)
+        writer.writerow(x)
+        x = ['Favorability']
+        x.extend(candidates.favorability)
+        writer.writerow(x)
+
+        writer.writerow([])
         writer.writerow(h)
         writer.writerows(votes)
 
@@ -68,8 +103,9 @@ def main(n_candidates, n_voters, win_pct, n_rounds):
         os.makedirs(DEST)
 
     for r in range(n_rounds):
-        results = generate_votes(n_candidates, n_voters)
-        report_votes(r+1, n_candidates, n_voters, win_pct, results)
+        candidates = Candidates(n_candidates)
+        results = generate_votes(candidates, n_voters)
+        report_votes(r+1, candidates, n_voters, win_pct, results)
 
 
 if __name__ == '__main__':
