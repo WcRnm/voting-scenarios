@@ -66,31 +66,40 @@ def count_votes(num_candidates, votes):
     return counts
 
 
-def tabulate_rcv(num_candidates, votes):
-    pass
-
-
 class Bucklin:
-    def __init__(self, candidates):
+    def __init__(self, candidates, win_pct):
         self.candidates = candidates
-        self.rounds = None
+        self.threshold = win_pct
+        self.round_votes = None
+        self.round_totals = None
 
     def tabulate(self, votes):
-        self.rounds = []
+        self.round_votes = []
         for i in range(self.candidates.count()-1):
             vote_sums = [0] * self.candidates.count()
             for v in votes:
                 if i + 1 < len(v):
                     vi = self.candidates.indexOf(v[i + 1])
                     vote_sums[vi] += 1
-            self.rounds.append(vote_sums)
+            self.round_votes.append(vote_sums)
+
+        self.round_totals = []
+        prev = None
+        for rv in self.round_votes:
+            vote_totals = []
+            vote_totals.extend(rv)
+            if prev is not None:
+                for j in range(len(prev)):
+                    vote_totals[j] += prev[j]
+            self.round_totals.append(vote_totals)
+            prev = vote_totals
 
     def report(self, writer):
         writer.writerow(['Bucklin'])
         writer.writerow(['Additional_Votes_Per_Round'])
 
         i = 0
-        for b in self.rounds:
+        for b in self.round_votes:
             if i == 0:
                 headers = ['Round']
                 headers.extend(self.candidates.names)
@@ -103,8 +112,7 @@ class Bucklin:
         writer.writerow(['Total_Votes_Per_Round'])
 
         i = 0
-        prev = None
-        for b in self.rounds:
+        for b in self.round_totals:
             if i == 0:
                 headers = ['Round']
                 headers.extend(self.candidates.names)
@@ -112,11 +120,7 @@ class Bucklin:
             i += 1
             row = [i]
             row.extend(b)
-            if prev is not None:
-                for j in range(1, len(prev)):
-                    row[j] += prev[j]
             writer.writerow(row)
-            prev = row
 
 
 def generate_votes(candidates, num_voters):
@@ -129,48 +133,62 @@ def generate_votes(candidates, num_voters):
     return votes
 
 
-def report_votes(ir, candidates, nv, th, votes, dest, bucklin):
-    nc = candidates.count()
-    tv = math.ceil(th * nv / 100.0)
+class Reporter:
+    def __init__(self, report_id, candidates, num_voters, threshold, raw_votes, dest, bucklin):
+        self.id = report_id
+        self.candidates = candidates
+        self.num_voters = num_voters
+        self.threshold = threshold
+        self.raw_votes = raw_votes
+        self.dest = dest
+        self.bucklin = bucklin
 
-    h = ['Voter']
-    for i in range(nc):
-        h.append(f'R{i+1}')
+    def report(self):
+        nc = self.candidates.count()
+        tv = math.ceil(self.threshold * self.num_voters / 100.0)
 
-    with open(f'{dest}/votes-{ir}.csv', "w", newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(['Candidates', nc])
-        writer.writerow(['Voters', nv])
-        writer.writerow(['Threshold', th, tv])
+        h = ['Voter']
+        for i in range(nc):
+            h.append(f'R{i+1}')
 
-        writer.writerow([])
-        x = ['Candidate']
-        x.extend(candidates.names)
-        writer.writerow(x)
-        x = ['Favorability']
-        x.extend(candidates.favorability)
-        writer.writerow(x)
+        with open(f'{self.dest}/votes-{self.id}.csv', "w", newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['Candidates', nc])
+            writer.writerow(['Voters', self.num_voters])
+            writer.writerow(['Threshold', self.threshold, tv])
 
-        writer.writerow([])
-        bucklin.report(writer)
+            writer.writerow([])
+            x = ['Candidate']
+            x.extend(self.candidates.names)
+            writer.writerow(x)
+            x = ['Favorability']
+            x.extend(self.candidates.favorability)
+            writer.writerow(x)
 
-        writer.writerow([])
-        writer.writerow(h)
-        writer.writerows(votes)
+            writer.writerow([])
+            self.bucklin.report(writer)
+
+            writer.writerow([])
+            writer.writerow(h)
+            writer.writerows(self.raw_votes)
 
 
 def main(n_candidates, n_voters, win_pct, n_rounds, dest):
     if not os.path.exists(dest):
         os.makedirs(dest)
+    else:
+        for f in os.listdir(dest):
+            os.remove(os.path.join(dest, f))
 
     for r in range(n_rounds):
         candidates = Candidates(n_candidates)
         results = generate_votes(candidates, n_voters)
 
-        bucklin = Bucklin(candidates)
+        bucklin = Bucklin(candidates, win_pct)
         bucklin.tabulate(results)
 
-        report_votes(r+1, candidates, n_voters, win_pct, results, dest, bucklin)
+        reporter = Reporter(r+1, candidates, n_voters, win_pct, results, dest, bucklin)
+        reporter.report()
 
 
 if __name__ == '__main__':
