@@ -72,6 +72,10 @@ class Voter:
         return votes
 
 
+def votes_to_win(threshold, num_voters):
+    return math.ceil(threshold * num_voters / 100.0)
+
+
 class Bucklin:
     def __init__(self, candidates, win_pct):
         self.candidates = candidates
@@ -141,7 +145,6 @@ class Reporter:
 
     def report(self):
         nc = self.candidates.count()
-        tv = math.ceil(self.threshold * self.num_voters / 100.0)
 
         h = ['Voter']
         for i in range(nc):
@@ -152,7 +155,7 @@ class Reporter:
             writer.writerow(['Candidates', nc])
             writer.writerow(['Voters', self.num_voters])
             writer.writerow(['Threshold', self.threshold, '%'])
-            writer.writerow(['Threshold', tv, 'votes'])
+            writer.writerow(['Threshold', votes_to_win(self.threshold, self.num_voters), 'votes'])
 
             writer.writerow([])
             x = ['Candidate']
