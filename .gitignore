@@ -134,3 +134,4 @@ dmypy.json
 # Project Specific
 /results/
 /*.ods
+/*.~*
