@@ -84,9 +84,10 @@ class Bucklin:
         self.round_totals = None
 
     def tabulate(self, votes):
+        nc = self.candidates.count()-1
         self.round_votes = []
-        for i in range(self.candidates.count()-1):
-            vote_sums = [0] * self.candidates.count()
+        for i in range(nc):
+            vote_sums = [0] * nc
             for v in votes:
                 if i + 1 < len(v):
                     vi = self.candidates.index_of(v[i + 1])
@@ -106,13 +107,14 @@ class Bucklin:
 
     def report(self, writer):
         writer.writerow(['Bucklin'])
-        writer.writerow(['Additional_Votes_Per_Round'])
+        writer.writerow(['Votes_Per_Round'])
 
         i = 0
         for b in self.round_votes:
             if i == 0:
                 headers = ['Round']
                 headers.extend(self.candidates.names)
+                headers.pop()  # None
                 writer.writerow(headers)
             i += 1
             row = [i]
@@ -126,6 +128,7 @@ class Bucklin:
             if i == 0:
                 headers = ['Round']
                 headers.extend(self.candidates.names)
+                headers.pop()  # None
                 writer.writerow(headers)
             i += 1
             row = [i]
@@ -144,7 +147,7 @@ class Reporter:
         self.bucklin = bucklin
 
     def report(self):
-        nc = self.candidates.count()
+        nc = self.candidates.count() - 1
 
         h = ['Voter']
         for i in range(nc):
