@@ -37,7 +37,7 @@ class Candidates:
                 return self.names[i]
         return NONE_VOTE
 
-    def indexOf(self, name):
+    def index_of(self, name):
         return self.names.index(name)
 
 
@@ -55,17 +55,6 @@ class Voter:
         return ranking
 
 
-def count_votes(num_candidates, votes):
-    counts = [0 * num_candidates]
-
-    for v in votes:
-        for r in v:
-
-            pass
-
-    return counts
-
-
 class Bucklin:
     def __init__(self, candidates, win_pct):
         self.candidates = candidates
@@ -79,7 +68,7 @@ class Bucklin:
             vote_sums = [0] * self.candidates.count()
             for v in votes:
                 if i + 1 < len(v):
-                    vi = self.candidates.indexOf(v[i + 1])
+                    vi = self.candidates.index_of(v[i + 1])
                     vote_sums[vi] += 1
             self.round_votes.append(vote_sums)
 
