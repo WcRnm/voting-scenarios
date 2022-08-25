@@ -9,21 +9,27 @@ NONE_VOTE = 'None'
 
 
 class Candidates:
-    def __init__(self, count):
+    def __init__(self, count, max_none_weight):
         if count > len(CANDIDATE_NAMES) or count < 1:
             raise ValueError('Too many/few Candidates')
         self.names = CANDIDATE_NAMES[:count]
         self.names.append(NONE_VOTE)
-        self.favorability = []
+        self.weight = []
         self.test = []
         fav_sum = 0
-        for i in range(count+1):
+        for i in range(count):
             fav = random.randrange(0, 100)
             fav_sum += fav
-            self.favorability.append(fav)
+            self.weight.append(fav)
+
+        # none vote
+        fav = random.randrange(0, max_none_weight)
+        fav_sum += fav
+        self.weight.append(fav)
+
         test_prev = 0
         for i in range(count+1):
-            test = test_prev + self.favorability[i]/fav_sum
+            test = test_prev + self.weight[i]/fav_sum
             self.test.append(test)
             test_prev = test
 
@@ -42,17 +48,28 @@ class Candidates:
 
 
 class Voter:
-    @staticmethod
-    def vote(candidates):
+    def __init__(self, candidates):
+        self.candidates = candidates
+
+    def vote(self):
         ranking = []
-        for c in range(candidates.count()):
-            name = candidates.random()
+        for c in range(self.candidates.count()):
+            name = self.candidates.random()
             if name in ranking:
                 continue
             if name is NONE_VOTE:
                 break
             ranking.append(name)
         return ranking
+
+    def generate(self, num_voters):
+        votes = []
+        for i in range(num_voters):
+            row = [i + 1]  # voter number
+            ranking = self.vote()
+            row.extend(ranking)
+            votes.append(row)
+        return votes
 
 
 class Bucklin:
@@ -112,21 +129,6 @@ class Bucklin:
             writer.writerow(row)
 
 
-class VoteGenerator:
-    def __init__(self, candidates, num_voters):
-        self.candidates = candidates
-        self.num_voters = num_voters
-
-    def generate(self):
-        votes = []
-        for i in range(self.num_voters):
-            row = [i + 1]  # voter number
-            ranking = Voter.vote(self.candidates)
-            row.extend(ranking)
-            votes.append(row)
-        return votes
-
-
 class Reporter:
     def __init__(self, report_id, candidates, num_voters, threshold, raw_votes, dest, bucklin):
         self.id = report_id
@@ -149,14 +151,15 @@ class Reporter:
             writer = csv.writer(f)
             writer.writerow(['Candidates', nc])
             writer.writerow(['Voters', self.num_voters])
-            writer.writerow(['Threshold', self.threshold, tv])
+            writer.writerow(['Threshold', self.threshold, '%'])
+            writer.writerow(['Threshold', tv, 'votes'])
 
             writer.writerow([])
             x = ['Candidate']
             x.extend(self.candidates.names)
             writer.writerow(x)
-            x = ['Favorability']
-            x.extend(self.candidates.favorability)
+            x = ['Weight']
+            x.extend(self.candidates.weight)
             writer.writerow(x)
 
             writer.writerow([])
@@ -167,7 +170,7 @@ class Reporter:
             writer.writerows(self.raw_votes)
 
 
-def main(n_candidates, n_voters, win_pct, n_rounds, dest):
+def main(n_candidates, n_voters, win_pct, n_rounds, max_none_weight, dest):
     if not os.path.exists(dest):
         os.makedirs(dest)
     else:
@@ -175,12 +178,11 @@ def main(n_candidates, n_voters, win_pct, n_rounds, dest):
             os.remove(os.path.join(dest, f))
 
     for r in range(n_rounds):
-        candidates = Candidates(n_candidates)
-
-        generator = VoteGenerator(candidates, n_voters)
-        results = generator.generate()
-
+        candidates = Candidates(n_candidates, max_none_weight)
+        voter = Voter(candidates)
         bucklin = Bucklin(candidates, win_pct)
+
+        results = voter.generate(n_voters)
         bucklin.tabulate(results)
 
         reporter = Reporter(r+1, candidates, n_voters, win_pct, results, dest, bucklin)
@@ -189,11 +191,12 @@ def main(n_candidates, n_voters, win_pct, n_rounds, dest):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', type=int, default=2, required=False, help='Number of Candidates or Resolutions')
-    parser.add_argument('-v', type=int, default=100, required=False, help='Number of Voters')
-    parser.add_argument('-t', type=int, default=75, required=False, help='Win threshold (percent)')
-    parser.add_argument('-r', type=int, default=10, required=False, help='Simulation rounds')
+    parser.add_argument('-nc', type=int, default=2, required=False, help='Number of Candidates or Resolutions')
+    parser.add_argument('-nv', type=int, default=40, required=False, help='Number of Voters')
+    parser.add_argument('-th', type=int, default=75, required=False, help='Win threshold (percent)')
+    parser.add_argument('-nr', type=int, default=10, required=False, help='Simulation rounds')
+    parser.add_argument('-wn', type=int, default=30, required=False, help='Max none vote weight')
     parser.add_argument('-d', type=str, default='results', required=False, help='Result folder')
     args = parser.parse_args()
 
-    main(args.c, args.v, args.t, args.r, args.d)
+    main(args.nc, args.nv, args.th, args.nr, args.wn, args.d)
