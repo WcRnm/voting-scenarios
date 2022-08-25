@@ -112,14 +112,19 @@ class Bucklin:
             writer.writerow(row)
 
 
-def generate_votes(candidates, num_voters):
-    votes = []
-    for i in range(num_voters):
-        row = [i + 1]  # voter number
-        ranking = Voter.vote(candidates)
-        row.extend(ranking)  # voter number, rankings
-        votes.append(row)
-    return votes
+class VoteGenerator:
+    def __init__(self, candidates, num_voters):
+        self.candidates = candidates
+        self.num_voters = num_voters
+
+    def generate(self):
+        votes = []
+        for i in range(self.num_voters):
+            row = [i + 1]  # voter number
+            ranking = Voter.vote(self.candidates)
+            row.extend(ranking)
+            votes.append(row)
+        return votes
 
 
 class Reporter:
@@ -171,7 +176,9 @@ def main(n_candidates, n_voters, win_pct, n_rounds, dest):
 
     for r in range(n_rounds):
         candidates = Candidates(n_candidates)
-        results = generate_votes(candidates, n_voters)
+
+        generator = VoteGenerator(candidates, n_voters)
+        results = generator.generate()
 
         bucklin = Bucklin(candidates, win_pct)
         bucklin.tabulate(results)
