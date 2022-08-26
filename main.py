@@ -6,6 +6,7 @@ import random
 
 CANDIDATE_NAMES = ['Alice', 'Bob', 'Carol', 'David', 'Erin', 'Fred', 'Grace', 'Henry']
 NONE_VOTE = 'None'
+MAX_WEIGHT = 5
 
 
 class Candidates:
@@ -18,7 +19,7 @@ class Candidates:
         self.test = []
         fav_sum = 0
         for i in range(count):
-            fav = random.randrange(0, 100)
+            fav = random.randrange(1, MAX_WEIGHT)
             fav_sum += fav
             self.weight.append(fav)
 
@@ -235,7 +236,7 @@ if __name__ == '__main__':
     parser.add_argument('-nv', type=int, default=20, required=False, help='Number of Voters')
     parser.add_argument('-th', type=int, default=75, required=False, help='Win threshold (percent)')
     parser.add_argument('-nr', type=int, default=10, required=False, help='Simulation rounds')
-    parser.add_argument('-wn', type=int, default=30, required=False, help='Max none vote weight')
+    parser.add_argument('-wn', type=int, default=2, required=False, help=f'Max none vote weight (0-{MAX_WEIGHT})')
     parser.add_argument('-d', type=str, default='results', required=False, help='Result folder')
     args = parser.parse_args()
 
