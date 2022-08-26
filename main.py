@@ -4,6 +4,8 @@ import math
 import os
 import random
 
+VERSION = 1
+
 CANDIDATE_NAMES = ['Alice', 'Bob', 'Carol', 'David', 'Erin', 'Fred', 'Grace', 'Henry']
 NONE_VOTE = 'None'
 MAX_WEIGHT = 5
