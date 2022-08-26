@@ -252,7 +252,7 @@ if __name__ == '__main__':
     parser.add_argument('-nc', type=int, default=2, required=False, help='Number of Candidates or Resolutions')
     parser.add_argument('-nv', type=int, default=20, required=False, help='Number of Voters')
     parser.add_argument('-th', type=int, default=75, required=False, help='Win threshold (percent)')
-    parser.add_argument('-nr', type=int, default=10, required=False, help='Simulation rounds')
+    parser.add_argument('-nr', type=int, default=50, required=False, help='Simulation rounds')
     parser.add_argument('-wn', type=int, default=2, required=False, help=f'Max none vote weight (0-{MAX_WEIGHT})')
     parser.add_argument('-d', type=str, default='results', required=False, help='Result folder')
     args = parser.parse_args()
