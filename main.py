@@ -135,6 +135,19 @@ class Bucklin:
             row.extend(b)
             writer.writerow(row)
 
+    def summary(self, writer, msg):
+        i = 0
+        for b in self.round_totals:
+            if i == 0:
+                headers = [msg]
+                headers.extend(self.candidates.names)
+                headers.pop()  # None
+                writer.writerow(headers)
+            i += 1
+            row = [i]
+            row.extend(b)
+            writer.writerow(row)
+
 
 class Reporter:
     def __init__(self, report_id, candidates, num_voters, threshold, raw_votes, dest, bucklin):
@@ -153,7 +166,7 @@ class Reporter:
         for i in range(nc):
             h.append(f'R{i+1}')
 
-        with open(f'{self.dest}/votes-{self.id}.csv', "w", newline='') as f:
+        with open(f'{self.dest}/election-{self.id}.csv', "w", newline='') as f:
             writer = csv.writer(f)
             writer.writerow(['Candidates', nc])
             writer.writerow(['Voters', self.num_voters])
@@ -183,6 +196,9 @@ def main(n_candidates, n_voters, win_pct, n_rounds, max_none_weight, dest):
         for f in os.listdir(dest):
             os.remove(os.path.join(dest, f))
 
+    win_votes = votes_to_win(threshold=win_pct, num_voters=n_voters)
+
+    reporters = []
     for r in range(n_rounds):
         candidates = Candidates(n_candidates, max_none_weight)
         voter = Voter(candidates)
@@ -193,6 +209,24 @@ def main(n_candidates, n_voters, win_pct, n_rounds, max_none_weight, dest):
 
         reporter = Reporter(r+1, candidates, n_voters, win_pct, results, dest, bucklin)
         reporter.report()
+
+        reporters.append(reporter)
+
+    # summary report
+    with open(f'{dest}/summary.csv', "w", newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['Candidates', n_candidates])
+        writer.writerow(['Voters', n_voters])
+        writer.writerow(['Threshold', win_pct, '%'])
+        writer.writerow(['Threshold', win_votes, 'votes'])
+
+        writer.writerow([])
+
+        row = ['Bucklin']
+        writer.writerow(row)
+        i = 0
+        for r in reporters:
+            r.bucklin.summary(writer, f'Election-{i+1}')
 
 
 if __name__ == '__main__':
