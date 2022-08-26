@@ -77,6 +77,10 @@ def votes_to_win(threshold, num_voters):
     return math.ceil(threshold * num_voters / 100.0)
 
 
+def is_tie(votes):
+    return len(votes) != len(set(votes))
+
+
 class Bucklin:
     def __init__(self, candidates, win_pct):
         self.candidates = candidates
@@ -85,6 +89,7 @@ class Bucklin:
         self.round_totals = None
 
     def tabulate(self, votes):
+        vt = votes_to_win(self.threshold, len(votes))
         nc = self.candidates.count()-1
         self.round_votes = []
         for i in range(nc):
@@ -101,8 +106,19 @@ class Bucklin:
             vote_totals = []
             vote_totals.extend(rv)
             if prev is not None:
-                for j in range(len(prev)):
+                for j in range(nc):
                     vote_totals[j] += prev[j]
+
+            tie = is_tie(vote_totals)
+            win = any(y >= vt for y in vote_totals)
+
+            if tie and win:
+                vote_totals.append('TIE-WIN')
+            elif tie:
+                vote_totals.append('TIE')
+            elif win:
+                vote_totals.append('WIN')
+
             self.round_totals.append(vote_totals)
             prev = vote_totals
 
@@ -227,7 +243,8 @@ def main(n_candidates, n_voters, win_pct, n_rounds, max_none_weight, dest):
         writer.writerow(row)
         i = 0
         for r in reporters:
-            r.bucklin.summary(writer, f'Election-{i+1}')
+            i += 1
+            r.bucklin.summary(writer, f'Election-{i}')
 
 
 if __name__ == '__main__':
