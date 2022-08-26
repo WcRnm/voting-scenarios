@@ -250,7 +250,7 @@ def main(n_candidates, n_voters, win_pct, n_rounds, max_none_weight, dest):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(f'Vote Generator v{VERSION}')
     parser.add_argument('-nc', type=int, default=2, required=False, help='Number of Candidates or Resolutions')
     parser.add_argument('-nv', type=int, default=20, required=False, help='Number of Voters')
     parser.add_argument('-th', type=int, default=75, required=False, help='Win threshold (percent)')
